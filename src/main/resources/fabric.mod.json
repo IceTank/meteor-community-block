@@ -14,7 +14,7 @@
   "environment": "client",
   "entrypoints": {
     "meteor": [
-      "com.example.addon.AddonTemplate"
+      "org.icetank.communityblock.CommunityBlock"
     ]
   },
   "mixins": [
