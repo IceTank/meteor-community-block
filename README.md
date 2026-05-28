@@ -6,7 +6,8 @@ This is a Meteor Plugin that blocks specific players chat messages
 Copy the .jar file from the release page to your mods folder with meteor installed
 
 # Usage
-Enable the plugin to block all players on the block list. Toggle 
+Enable the plugin to block all players on the block list. Toggle the 'Update Blocked Players' option to automatically update 
+the block list from github.
 
 ## Commands
 
