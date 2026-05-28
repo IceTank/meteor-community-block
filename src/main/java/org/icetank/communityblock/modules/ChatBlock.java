@@ -56,6 +56,7 @@ public class ChatBlock extends Module {
     private void onTick(TickEvent.Pre event) {
         if (updateBlockedPlayers.get()) {
             updateBlockedPlayers.set(false);
+            updateBlockedPlayers();
         }
     }
 
