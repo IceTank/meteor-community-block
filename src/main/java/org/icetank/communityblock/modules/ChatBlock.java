@@ -1,6 +1,7 @@
 package org.icetank.communityblock.modules;
 
 
+import it.unimi.dsi.fastutil.Pair;
 import org.icetank.communityblock.CommunityBlock;
 import meteordevelopment.meteorclient.events.game.ReceiveMessageEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
@@ -18,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,10 +34,10 @@ public class ChatBlock extends Module {
 
     private final SettingGroup sgGeneral = this.settings.getDefaultGroup();
 
-    private List<UUID> blockedPlayers = new ArrayList<>();
+    private List<Pair<String, UUID>> blockedPlayers = new CopyOnWriteArrayList<>();
 
     public ChatBlock() {
-        super(CommunityBlock.CATEGORY, "world-origin", "An example module that highlights the center of the world.");
+        super(CommunityBlock.CATEGORY, "chat-block", "Blocks chat messages from players on the blocked list.");
     }
 
     private final Setting<Boolean> spamBots = sgGeneral.add(new BoolSetting.Builder()
@@ -60,7 +63,10 @@ public class ChatBlock extends Module {
     private void onTick(TickEvent.Pre event) {
         if (updateBlockedPlayers.get()) {
             updateBlockedPlayers.set(false);
-            blockedPlayers.clear();
+            CompletableFuture.runAsync(() -> {
+                blockedPlayers.addAll(fetchBlockedPlayers());
+                info("Blocked players list updated. Total blocked players: " + blockedPlayers.size());
+            });
         }
     }
 
@@ -92,17 +98,18 @@ public class ChatBlock extends Module {
     }
 
     /** fetch updated player list from the github repositories spamBots.txt file */
-    private List<UUID> fetchBlockedPlayers() {
-        List<UUID> blocked = new ArrayList<>();
+    private List<Pair<String, UUID>> fetchBlockedPlayers() {
+        List<Pair<String, UUID>> blocked = new ArrayList<>();
         try {
-            URI uri = URI.create("https://raw.githubusercontent.com/IceTank/meteor-community-block/refs/heads/master/spamBots.txt");
+            URI uri = URI.create("https://raw.githubusercontent.com/IceTank/meteor-community-block/refs/heads/1.21.4/data/spamBots.txt");
             URL url = uri.toURL();
             try (Scanner scanner = new Scanner(url.openStream())) {
                 while (scanner.hasNextLine()) {
                     String line = scanner.nextLine().trim();
                     if (!line.isEmpty()) {
+                        var parts = line.split(":");
                         try {
-                            blocked.add(UUID.fromString(line));
+                            blocked.add(Pair.of(parts[0], UUID.fromString(parts[1])));
                         } catch (IllegalArgumentException e) {
                             // Ignore invalid UUIDs
                         }
@@ -115,5 +122,21 @@ public class ChatBlock extends Module {
             error("Invalid URL: " + sourceRepository.get());
         }
         return blocked;
+    }
+
+    public boolean block(String playerName, UUID playerUUID) {
+        if (blockedPlayers.stream().anyMatch(pair -> pair.right() == playerUUID)) {
+            return false; // Player is already blocked
+        }
+        blockedPlayers.add(Pair.of(playerName, playerUUID));
+        return true;
+    }
+
+    public void unblock(String playerName) {
+        blockedPlayers.removeIf(pair -> pair.left().equalsIgnoreCase(playerName));
+    }
+
+    public List<Pair<String, UUID>> getBlockedPlayers() {
+        return new ArrayList<>(blockedPlayers);
     }
 }

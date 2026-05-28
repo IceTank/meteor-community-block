@@ -1,5 +1,7 @@
 package org.icetank.communityblock;
 
+import meteordevelopment.meteorclient.commands.Commands;
+import org.icetank.communityblock.commands.PlayerInfoCommand;
 import org.icetank.communityblock.modules.ChatBlock;
 import com.mojang.logging.LogUtils;
 import meteordevelopment.meteorclient.addons.GithubRepo;
@@ -18,6 +20,8 @@ public class CommunityBlock extends MeteorAddon {
 
         // Modules
         Modules.get().add(new ChatBlock());
+
+        Commands.add(new PlayerInfoCommand());
     }
 
     @Override
