@@ -8,7 +8,6 @@ import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.meteorclient.settings.BoolSetting;
 import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
-import meteordevelopment.meteorclient.settings.StringSetting;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.client.network.PlayerListEntry;
@@ -41,21 +40,14 @@ public class ChatBlock extends Module {
     }
 
     private final Setting<Boolean> spamBots = sgGeneral.add(new BoolSetting.Builder()
-        .name("Spam Bots")
+        .name("Mute Spam Bots")
         .defaultValue(true)
         .build()
     );
 
     private final Setting<Boolean> updateBlockedPlayers = sgGeneral.add(new BoolSetting.Builder()
-        .name("Update Blocked Players")
+        .name("Update Block List")
         .defaultValue(true)
-        .build()
-    );
-
-    private final Setting<String> sourceRepository = sgGeneral.add(new StringSetting.Builder()
-        .name("Source Repository")
-        .description("The URL of the source repository for this module.")
-        .defaultValue("https://github.com/IceTank/meteor-community-block")
         .build()
     );
 
@@ -72,6 +64,9 @@ public class ChatBlock extends Module {
 
     @EventHandler
     private void onMessageReceive(ReceiveMessageEvent event) {
+        if (!spamBots.get()) {
+            return;
+        }
         String message = event.getMessage().getString();
 
         Matcher chatMatcher = ChatPattern.matcher(message);
@@ -108,6 +103,10 @@ public class ChatBlock extends Module {
                     String line = scanner.nextLine().trim();
                     if (!line.isEmpty()) {
                         var parts = line.split(":");
+                        var uuid = parts[1];
+                        if (blockedPlayers.stream().anyMatch(pair -> pair.right().toString().equals(uuid))) {
+                            continue; // Skip if player is already blocked
+                        }
                         try {
                             blocked.add(Pair.of(parts[0], UUID.fromString(parts[1])));
                         } catch (IllegalArgumentException e) {
@@ -119,7 +118,7 @@ public class ChatBlock extends Module {
                 error("Failed to fetch blocked players", e);
             }
         } catch (Exception e) {
-            error("Invalid URL: " + sourceRepository.get());
+            error("Invalid URL: " + e.getMessage(), e);
         }
         return blocked;
     }
