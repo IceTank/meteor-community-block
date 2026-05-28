@@ -37,6 +37,7 @@ public class ChatBlock extends Module {
 
     public ChatBlock() {
         super(CommunityBlock.CATEGORY, "chat-block", "Blocks chat messages from players on the blocked list.");
+        updateBlockedPlayers();
     }
 
     private final Setting<Boolean> spamBots = sgGeneral.add(new BoolSetting.Builder()
@@ -55,10 +56,6 @@ public class ChatBlock extends Module {
     private void onTick(TickEvent.Pre event) {
         if (updateBlockedPlayers.get()) {
             updateBlockedPlayers.set(false);
-            CompletableFuture.runAsync(() -> {
-                blockedPlayers.addAll(fetchBlockedPlayers());
-                info("Blocked players list updated. Total blocked players: " + blockedPlayers.size());
-            });
         }
     }
 
@@ -82,6 +79,13 @@ public class ChatBlock extends Module {
                 event.setCancelled(true);
             }
         }
+    }
+
+    private void updateBlockedPlayers() {
+        CompletableFuture.runAsync(() -> {
+            blockedPlayers.addAll(fetchBlockedPlayers());
+            info("Blocked players list updated. Total blocked players: " + blockedPlayers.size());
+        });
     }
 
     private boolean isPlayerBlocked(String playerName) {
