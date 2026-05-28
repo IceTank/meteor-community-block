@@ -92,7 +92,7 @@ public class ChatBlock extends Module {
     private boolean isPlayerBlocked(String playerName) {
         PlayerListEntry entry = mc.getNetworkHandler().getPlayerListEntry(playerName);
         if (entry != null) {
-            return blockedPlayers.contains(entry.getProfile().getId());
+            return blockedPlayers.stream().anyMatch(pair -> pair.right().equals(entry.getProfile().getId()));
         }
         return false;
     }
